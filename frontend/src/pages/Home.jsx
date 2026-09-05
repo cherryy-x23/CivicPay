@@ -415,7 +415,7 @@ function Home() {
     }, 850);
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 60000);
+    const timeoutId = setTimeout(() => controller.abort(), );
 
     try {
       const token = getAccessToken();
@@ -3064,44 +3064,54 @@ function Home() {
 
             <details className="ocr-card">
 
-              <summary>
+  <summary>
 
-                <div className="ocr-summary-left">
+    <div className="ocr-summary-left">
 
-                  <div className="ocr-icon">
-                    📄
-                  </div>
+      <div className="ocr-icon">
+        🔐
+      </div>
 
-                  <div>
+      <div>
 
-                    <strong>
-                      View Extracted Text
-                    </strong>
+        <strong>
+          OCR Evidence
+        </strong>
 
-                    <span>
-                      Raw OCR evidence from the
-                      uploaded image.
-                    </span>
+        <span>
+          Sensitive extracted text is protected for privacy.
+        </span>
 
-                  </div>
+      </div>
 
-                </div>
+    </div>
 
-                <span className="ocr-arrow">
-                  ↓
-                </span>
+    <span className="ocr-arrow">
+      ↓
+    </span>
 
-              </summary>
+  </summary>
 
+  <div className="ocr-text">
 
-              <div className="ocr-text">
+    <div className="privacy-ocr-message">
 
-                {result.extracted_text ||
-                  "No text was extracted from the image."}
+      <strong>
+        🔐 Sensitive OCR Protected
+      </strong>
 
-              </div>
+      <p>
+        CivicPay uses extracted text internally during
+        the security investigation, but raw OCR text is
+        not displayed here to protect your payment
+        information.
+      </p>
 
-            </details>
+    </div>
+
+  </div>
+
+</details>
 
 
             {/* =================================================
