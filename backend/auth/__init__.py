@@ -1,0 +1,3 @@
+"""
+CivicPay Authentication Package
+"""

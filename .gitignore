@@ -1,0 +1,80 @@
+# ==============================
+# Environment / Secrets
+# ==============================
+
+.env
+.env.*
+!.env.example
+
+# ==============================
+# Python
+# ==============================
+
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+venv/
+.venv/
+
+# ==============================
+# Python tools / caches
+# ==============================
+
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ==============================
+# CivicPay local database
+# ==============================
+
+backend/civicpay.db
+backend/*.db
+
+# ==============================
+# Temporary / uploaded files
+# ==============================
+
+backend/uploads/
+backend/tmp/
+backend/temp/
+
+# ==============================
+# Node
+# ==============================
+
+node_modules/
+
+# ==============================
+# Frontend environment files
+# ==============================
+
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+# ==============================
+# Frontend build
+# ==============================
+
+frontend/dist/
+
+# ==============================
+# Logs
+# ==============================
+
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# ==============================
+# OS / Editor
+# ==============================
+
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
