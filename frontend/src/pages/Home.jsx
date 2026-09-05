@@ -397,141 +397,172 @@ function Home() {
   // =====================================================
 
   const analyzePayment = async () => {
-    if (!selectedFile || loading) return;
+  if (!selectedFile || loading) return;
 
-    setLoading(true);
-    setError("");
-    setResult(null);
-    setCheckedSteps([]);
-    setCopiedField("");
-    setAnalysisStep(0);
-    setDisplayedRiskScore(0);
+  setLoading(true);
+  setError("");
+  setResult(null);
+  setCheckedSteps([]);
+  setCopiedField("");
+  setAnalysisStep(0);
+  setDisplayedRiskScore(0);
 
-    const stepTimer = setInterval(() => {
-      setAnalysisStep((current) => {
-        if (current >= analysisStages.length - 1) return current;
-        return current + 1;
-      });
-    }, 850);
+  const stepTimer = setInterval(() => {
+    setAnalysisStep((current) => {
+      if (current >= analysisStages.length - 1) {
+        return current;
+      }
+      return current + 1;
+    });
+  }, 850);
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), );
+  const controller = new AbortController();
+
+  const timeoutId = setTimeout(
+    () => controller.abort(),
+    120000
+  );
+
+  try {
+    const token = getAccessToken();
+
+    if (!token || isTokenExpired(token)) {
+      logout();
+      window.location.href = "/login";
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+
+    const response = await fetch(
+      `${API_BASE_URL}/analyze`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+        signal: controller.signal,
+      }
+    );
+
+    const responseText = await response.text();
+
+    let data;
 
     try {
-      const token = getAccessToken();
+      data = responseText
+        ? JSON.parse(responseText)
+        : null;
+    } catch {
+      throw new Error(
+        "The CivicPay backend returned an invalid response."
+      );
+    }
 
-      if (!token) {
-        window.location.href = "/login";
-        return;
-      }
+    if (response.status === 401) {
+      logout();
 
-      const formData = new FormData();
-      formData.append("file", selectedFile);
-
-      const response = await fetch(
-        `${API_BASE_URL}/analyze`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-          signal: controller.signal,
-        }
+      setSessionMessage(
+        "Your CivicPay session has expired. Please sign in again."
       );
 
-      const responseText = await response.text();
-      let data;
-
-      try {
-        data = responseText ? JSON.parse(responseText) : null;
-      } catch {
-        throw new Error("The CivicPay backend returned an invalid response.");
-      }
-
-      if (response.status === 401) {
-        logout();
-        setSessionMessage(
-          "Your CivicPay session has expired. Please sign in again."
-        );
-        window.location.href = "/login";
-        return;
-      }
-
-      if (!response.ok) {
-        const detail =
-          data?.detail ||
-          data?.message ||
-          `Server returned error ${response.status}.`;
-        throw new Error(detail);
-      }
-
-      if (!data || typeof data !== "object") {
-        throw new Error("CivicPay received an empty analysis result.");
-      }
-
-      if (!data.risk_analysis || typeof data.risk_analysis !== "object") {
-        throw new Error("The analysis completed, but no risk assessment was returned.");
-      }
-
-      // Do not log analysis results in the browser console.
-      // Payment details, OCR content and QR data are sensitive.
-      setResult(data);
-      setAnalysisStep(4);
-      fetchAnalysisHistory();
-
-      setTimeout(() => {
-        document
-          .getElementById("investigation-result")
-          ?.scrollIntoView({
-            behavior: "smooth",
-            block: "start",
-          });
-      }, 150);
-    } catch (err) {
-      // Do not expose payment evidence or backend details through
-      // browser developer-console logs.
-      if (err?.name === "AbortError") {
-        setError("The analysis took too long. Please check that the CivicPay backend and AI service are running, then try again.");
-      } else if (err instanceof TypeError) {
-        setError("CivicPay could not reach the backend. Start the FastAPI server and try again.");
-      } else {
-        setError(
-          err?.message ||
-            "Unable to analyze the payment. Please try again."
-        );
-      }
-    } finally {
-      clearInterval(stepTimer);
-      clearTimeout(timeoutId);
-      setLoading(false);
-    }
-  };
-
-  // =====================================================
-  // ANALYZE ANOTHER PAYMENT
-  // =====================================================
-
-  const analyzeAnother = () => {
-    if (preview) {
-      URL.revokeObjectURL(preview);
+      window.location.href = "/login";
+      return;
     }
 
-    setSelectedFile(null);
-    setPreview(null);
-    setResult(null);
-    setError("");
-    setSessionMessage("");
+    if (!response.ok) {
+      const detail =
+        data?.detail ||
+        data?.message ||
+        `Server returned error ${response.status}.`;
 
-    setAnalysisStep(0);
-    setDisplayedRiskScore(0);
+      throw new Error(detail);
+    }
 
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
-  };
+    if (!data || typeof data !== "object") {
+      throw new Error(
+        "CivicPay received an empty analysis result."
+      );
+    }
 
+    if (
+      !data.risk_analysis ||
+      typeof data.risk_analysis !== "object"
+    ) {
+      throw new Error(
+        "The analysis completed, but no risk assessment was returned."
+      );
+    }
+
+    // Do not log analysis results in the browser console.
+    // Payment details, OCR content and QR data are sensitive.
+
+    setResult(data);
+    setAnalysisStep(4);
+
+    fetchAnalysisHistory();
+
+    setTimeout(() => {
+      document
+        .getElementById("investigation-result")
+        ?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+    }, 150);
+
+  } catch (err) {
+    // Do not expose payment evidence or backend details
+    // through browser developer-console logs.
+
+    if (err?.name === "AbortError") {
+      setError(
+        "The analysis took too long. Please check that the CivicPay backend and AI service are running, then try again."
+      );
+    } else if (err instanceof TypeError) {
+      setError(
+        "CivicPay could not reach the backend. Start the FastAPI server and try again."
+      );
+    } else {
+      setError(
+        err?.message ||
+        "Unable to analyze the payment. Please try again."
+      );
+    }
+
+  } finally {
+    clearInterval(stepTimer);
+    clearTimeout(timeoutId);
+    setLoading(false);
+  }
+};
+// =====================================================
+// ANALYZE ANOTHER PAYMENT
+// =====================================================
+
+const analyzeAnother = () => {
+  if (preview) {
+    URL.revokeObjectURL(preview);
+  }
+
+  setSelectedFile(null);
+  setPreview(null);
+  setResult(null);
+  setError("");
+  setSessionMessage("");
+
+  setAnalysisStep(0);
+  setDisplayedRiskScore(0);
+  setCheckedSteps([]);
+  setCopiedField("");
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth",
+  });
+};
   // =====================================================
   // RISK CLASS
   // =====================================================
